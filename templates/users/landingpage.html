@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CancerMamo — AI Mammography Assistant</title>
+  <meta name="description" content="CancerMamo helps clinicians and patients manage mammograms with secure uploads, fast AI-assisted triage, and explainable results." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0b1020;
+      --bg-soft:#0f1530;
+      --surface:#121936;
+      --card:#141c3a;
+      --text:#e8ecf7;
+      --muted:#b8c1d9;
+      --brand:#7aa2ff;
+      --brand-2:#62e6b8;
+      --accent:#ffd166;
+      --danger:#ff6b6b;
+      --radius:16px;
+      --shadow:0 10px 30px rgba(0,0,0,.25);
+      --max:1200px;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:linear-gradient(180deg,var(--bg) 0%, #0b122a 60%, #0a1026 100%);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;scroll-behavior:smooth}
+    a{color:inherit;text-decoration:none}
+    img{max-width:100%;display:block}
+    .container{max-width:var(--max);margin:0 auto;padding:0 20px}
+    .btn{display:inline-flex;align-items:center;gap:.5rem;padding:.9rem 1.2rem;border-radius:999px;font-weight:600;border:1px solid transparent;transition:.2s background,.2s transform}
+    .btn:hover{transform:translateY(-1px)}
+    .btn-primary{background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#0b1020}
+    .btn-outline{border-color:#2b3569;background:transparent;color:var(--text)}
+    .chip{display:inline-flex;gap:.5rem;align-items:center;padding:.35rem .7rem;border:1px solid #2b3569;border-radius:999px;color:var(--muted);font-size:.85rem}
+    .shadow{box-shadow:var(--shadow)}
+    .glass{backdrop-filter: blur(8px); background: rgba(20,28,58,.55); border:1px solid rgba(122,162,255,.25)}
+    .badge{font-size:.75rem;color:#0b1020;background:var(--accent);padding:.35rem .6rem;border-radius:999px;font-weight:700}
+    .muted{color:var(--muted)}
+    .h1{font-weight:800;font-size:clamp(2rem,5vw,3.25rem);line-height:1.1;margin:0}
+    .h2{font-weight:800;font-size:clamp(1.4rem,3.2vw,2rem);margin:.2rem 0 1rem}
+    .h3{font-weight:700;font-size:1.15rem;margin:.2rem 0 .6rem}
+    /* Header */
+    header{position:sticky;top:0;z-index:50;background:rgba(11,16,32,.7);backdrop-filter: blur(10px);border-bottom:1px solid rgba(122,162,255,.15)}
+    .nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+    .nav-left{display:flex;gap:12px;align-items:center}
+    .logo{width:38px;height:38px;border-radius:12px;background:conic-gradient(from 180deg,#70a1ff,#62e6b8,#70a1ff);display:grid;place-items:center;box-shadow:0 6px 18px rgba(112,161,255,.35)}
+    .logo i{color:#0b1020;font-size:22px}
+    .nav-links{display:flex;gap:22px;align-items:center}
+    .nav-links a{color:var(--muted);font-weight:600}
+    .nav-links a:hover{color:var(--text)}
+    .mobile-toggle{display:none}
+    @media (max-width:900px){
+      .nav-links{display:none}
+      .mobile-toggle{display:inline-flex}
+    }
+    /* Hero */
+    .hero{padding:64px 0 28px;position:relative;overflow:hidden}
+    .grid-hero{display:grid;grid-template-columns:1.15fr .85fr;gap:32px;align-items:center}
+    @media (max-width:900px){.grid-hero{grid-template-columns:1fr}}
+    .hero-visual{
+      position:relative;border-radius:var(--radius);padding:18px;background:radial-gradient(1200px 500px at 80% -20%,rgba(122,162,255,.15),transparent 60%), var(--surface);
+      border:1px solid rgba(122,162,255,.2)
+    }
+    .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:16px}
+    .kpi{background:var(--card);border:1px solid rgba(122,162,255,.2);border-radius:14px;padding:14px;text-align:center}
+    .kpi b{font-size:1.4rem}
+    /* Section */
+    section{padding:64px 0}
+    .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+    @media (max-width:900px){.cards{grid-template-columns:1fr}}
+    .card{background:var(--card);border:1px solid rgba(122,162,255,.18);border-radius:16px;padding:20px}
+    .card i{font-size:22px}
+    .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+    @media (max-width:1100px){.steps{grid-template-columns:repeat(2,1fr)}}
+    @media (max-width:700px){.steps{grid-template-columns:1fr}}
+    .step{background:var(--card);border:1px dashed rgba(122,162,255,.25);border-radius:16px;padding:18px;position:relative}
+    .step .num{position:absolute;top:-12px;left:-12px;background:var(--accent);color:#0b1020;border-radius:999px;width:34px;height:34px;display:grid;place-items:center;font-weight:800}
+    /* Upload */
+    .uploader{display:grid;grid-template-columns:1.2fr .8fr;gap:18px}
+    @media (max-width:900px){.uploader{grid-template-columns:1fr}}
+    .drop{border:2px dashed rgba(122,162,255,.35);border-radius:18px;padding:28px;text-align:center;background:rgba(122,162,255,.06)}
+    .drop.drag{background:rgba(122,162,255,.12)}
+    .list{display:grid;gap:12px}
+    .list .row{display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(122,162,255,.2);border-radius:12px;padding:10px 12px;background:var(--surface)}
+    /* Testimonials */
+    .testis{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+    @media (max-width:1000px){.testis{grid-template-columns:1fr 1fr}}
+    @media (max-width:700px){.testis{grid-template-columns:1fr}}
+    blockquote{margin:0;padding:0}
+    .quote{background:var(--surface);border-radius:16px;padding:18px;border:1px solid rgba(122,162,255,.2)}
+    /* FAQ */
+    details{background:var(--surface);border:1px solid rgba(122,162,255,.2);border-radius:14px;padding:12px 16px}
+    details+details{margin-top:10px}
+    details summary{cursor:pointer;font-weight:700}
+    /* Footer */
+    footer{border-top:1px solid rgba(122,162,255,.15);background:rgba(11,16,32,.6)}
+    .foot{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:24px;padding:40px 0}
+    @media (max-width:900px){.foot{grid-template-columns:1fr 1fr}}
+    @media (max-width:600px){.foot{grid-template-columns:1fr}}
+    .tiny{font-size:.85rem;color:var(--muted)}
+    .bar{height:1px;background:linear-gradient(90deg,transparent,rgba(122,162,255,.35),transparent);margin:26px 0}
+    /* Utility */
+    .center{text-align:center}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    @media (max-width:900px){.grid2{grid-template-columns:1fr}}
+    .partners{display:flex;gap:26px;flex-wrap:wrap;align-items:center;opacity:.85}
+    .tag{display:inline-flex;gap:.55rem;align-items:center;background:#0f1736;border:1px solid rgba(122,162,255,.2);padding:.5rem .7rem;border-radius:999px}
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="container nav">
+      <div class="nav-left">
+        <div class="logo"><i class="bi bi-activity"></i></div>
+        <strong style="font-size:1.05rem;letter-spacing:.3px">CancerMamo</strong>
+        <span class="chip"><i class="bi bi-shield-lock"></i> Privacy-first</span>
+      </div>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="{% url 'about' %}">Features</a>
+        <a href="{% url 'about' %}">How it works</a>
+        <a href="{% url 'register' %}">Upload</a>
+        <a href="#interpretability">Explainability</a>
+        <a href="#FAQ">FAQ</a>
+      </nav>
+      <div style="display:flex;gap:10px;align-items:center">
+        <a class="btn btn-outline" href="{% url 'register' %}"><i class="bi bi-envelope"></i> Contact</a>
+        <a class="btn btn-primary" href="{% url 'register' %}"><i class="bi bi-cloud-upload"></i> Login</a>
+        <button class="btn btn-outline mobile-toggle" id="menuBtn" aria-label="Open menu"><i class="bi bi-list"></i></button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container grid-hero">
+      <div>
+        <span class="badge">Early detection saves lives</span>
+        <h1 class="h1" style="margin-top:10px">
+          AI-assisted mammogram analysis <span style="color:var(--brand-2)">you can trust</span>.
+        </h1>
+        <p class="muted" style="font-size:1.05rem;max-width:46ch">
+          CancerMamo helps clinicians and patients manage mammograms with secure uploads, rapid triage, and clear, explainable heatmaps — all in a privacy-first workflow.
+        </p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:14px">
+          <a class="btn btn-primary" href="#upload"><i class="bi bi-cloud-arrow-up"></i> Upload Mammogram</a>
+          <a class="btn btn-outline" href="#how"><i class="bi bi-play-circle"></i> See how it works</a>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
+          <span class="tag"><i class="bi bi-lock"></i> End-to-end encryption in transit</span>
+          <span class="tag"><i class="bi bi-eye"></i> Explainable results</span>
+          <span class="tag"><i class="bi bi-cloud-check"></i> Works on web</span>
+        </div>
+        <div class="kpis">
+          <div class="kpi"><b>Fast</b><div class="muted">Seconds per study*</div></div>
+          <div class="kpi"><b>Secure</b><div class="muted">Role-based access</div></div>
+          <div class="kpi"><b>Explainable</b><div class="muted">Heatmap overlays</div></div>
+        </div>
+        <p class="tiny" style="margin-top:6px">* Demo speed depends on network and file size.</p>
+      </div>
+
+      <div class="hero-visual shadow">
+        <img src="https://unsplash.com/photos/x-ray-examination-of-mammary-glands-and-medical-record-of-patient-mammography-and-breast-cancer-concept-AXd8LmIRm2Y&auto=format&fit=crop" alt="Clinician reviewing mammogram on screen" style="border-radius:12px" />
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+          <div class="glass" style="border-radius:12px;padding:12px">
+            <div class="muted" style="font-size:.9rem">Model Output</div>
+            <div class="h3">Benign (0.82)</div>
+            <div class="tiny">Confidence score shown for clinical review only.</div>
+          </div>
+          <div class="glass" style="border-radius:12px;padding:12px">
+            <div class="muted" style="font-size:.9rem">Explainability</div>
+            <div class="h3">Heatmap Focus</div>
+            <div class="tiny">Grad-CAM overlay highlights regions of interest.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+
+  <!-- Features -->
+  <section id="features">
+    <div class="container">
+      <div class="grid2" style="align-items:center">
+        <div>
+          <h2 class="h2">Built for clinicians, friendly for patients</h2>
+          <p class="muted">From secure uploads to explainable overlays, CancerMamo keeps the workflow simple while preserving clinical rigor.</p>
+        </div>
+      </div>
+      <div class="cards" style="margin-top:16px">
+        <div class="card">
+          <i class="bi bi-cloud-lock"></i>
+          <h3 class="h3">Secure uploads</h3>
+          <p class="muted">Encrypted file transfer, automatic checksum verification, and temporary storage with timed deletion options.</p>
+        </div>
+        <div class="card">
+          <i class="bi bi-layers"></i>
+          <h3 class="h3">DICOM & image support</h3>
+          <p class="muted">Supports common image formats and DICOM metadata (patient-safe demo mode available).</p>
+        </div>
+        <div class="card">
+          <i class="bi bi-brightness-high"></i>
+          <h3 class="h3">Explainable heatmaps</h3>
+          <p class="muted">Grad-CAM style heatmaps help show why a prediction was made — useful for education and QA.</p>
+        </div>
+        <div class="card">
+          <i class="bi bi-diagram-3"></i>
+          <h3 class="h3">Role-based access</h3>
+          <p class="muted">Team management with roles for radiologists, clinicians, and admins to control who sees what.</p>
+        </div>
+        <div class="card">
+          <i class="bi bi-speedometer"></i>
+          <h3 class="h3">Triage first</h3>
+          <p class="muted">Queue and prioritize studies for faster review on busy days.</p>
+        </div>
+        <div class="card">
+          <i class="bi bi-graph-up-arrow"></i>
+          <h3 class="h3">Audit & history</h3>
+          <p class="muted">Track predictions, reviewer notes, and exported reports in a secure audit trail.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section id="how">
+    <div class="container">
+      <h2 class="h2 center">How it works</h2>
+      <div class="steps" style="margin-top:18px">
+         <div class="step">
+          <div class="num">1</div>
+          <h3 class="h3">Register</h3>
+          <p class="muted">Register your credentials </p>
+        </div>
+        <div class="step">
+          <div class="num">2</div>
+          <h3 class="h3">Upload</h3>
+          <p class="muted">Drag-and-drop a mammogram (demo supports PNG/JPG). Files are validated client-side before transfer.</p>
+        </div>
+        <div class="step">
+          <div class="num">3</div>
+          <h3 class="h3">Analyze</h3>
+          <p class="muted">Server runs the AI model (e.g., ResNet-based) and returns a score plus saliency heatmap.</p>
+        </div>
+        <div class="step">
+          <div class="num">4</div>
+          <h3 class="h3">Review</h3>
+          <p class="muted">Overlay heatmap, inspect metadata, and add notes. Use as a second reader, not a diagnosis.</p>
+        </div>
+        <div class="step">
+          <div class="num">5</div>
+          <h3 class="h3">Share</h3>
+          <p class="muted">Export a PDF summary for your records or referral (PHI-safe template in demo).</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- Interpretability -->
+  <section id="interpretability">
+    <div class="container">
+      <div class="grid2" style="align-items:center">
+        <div>
+          <h2 class="h2">Explainability that teaches</h2>
+          <p class="muted">CancerMamo renders a Grad-CAM-style overlay so reviewers can see which regions most influenced the model. Pair it with comments and QA checklists to support training and second-reader review.</p>
+          <ul class="muted" style="line-height:1.8">
+            <li><i class="bi bi-eye"></i> Adjustable overlay strength</li>
+            <li><i class="bi bi-rulers"></i> Pixel-level inspection</li>
+            <li><i class="bi bi-download"></i> Exportable snapshots</li>
+          </ul>
+        </div>
+        <div class="shadow" style="border-radius:16px;overflow:hidden;border:1px solid rgba(122,162,255,.2)">
+          <img src="https://images.unsplash.com/photo-1559757175-08aecaaf6891?q=80&w=1200&auto=format&fit=crop" alt="Heatmap overlay illustration" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Security -->
+  <section>
+    <div class="container">
+      <div class="cards">
+        <div class="card">
+          <i class="bi bi-lock"></i>
+          <h3 class="h3">Security & privacy</h3>
+          <p class="muted">TLS in transit, hashed IDs, and expiring links. Configure retention windows and access policies per team.</p>
+        </div>
+        <div class="card">
+          <i class="bi bi-people"></i>
+          <h3 class="h3">Consent & control</h3>
+          <p class="muted">Fine-grained consent prompts and audit logs help you operate responsibly.</p>
+        </div>
+        <div class="card">
+          <i class="bi bi-gear"></i>
+          <h3 class="h3">API-first</h3>
+          <p class="muted">Connect your Django backend, store results in MySQL/PostgreSQL, and stream progress to the UI.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section>
+    <div class="container">
+      <h2 class="h2 center">What users say</h2>
+      <div class="testis" style="margin-top:16px">
+        <div class="quote">
+          <blockquote>“The heatmaps are fantastic for teaching our interns how to think about subtle findings.”</blockquote>
+          <div class="tiny muted" style="margin-top:8px">— Radiology Educator</div>
+        </div>
+        <div class="quote">
+          <blockquote>“Upload, triage, review — the workflow is exactly what we needed during busy clinics.”</blockquote>
+          <div class="tiny muted" style="margin-top:8px">— Clinic Lead</div>
+        </div>
+        <div class="quote">
+          <blockquote>“Simple for patients, powerful for clinicians. The best of both worlds.”</blockquote>
+          <div class="tiny muted" style="margin-top:8px">— General Practitioner</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq">
+    <div class="container">
+      <h2 class="h2 center">Frequently asked questions</h2>
+      <div class="grid2" style="margin-top:16px">
+        <div>
+          <details>
+            <summary>Is this a diagnostic tool?</summary>
+            <p class="muted">No. CancerMamo is an assistive tool and should not be used as the sole basis for diagnosis. A qualified clinician must review results.</p>
+          </details>
+          <details>
+            <summary>Can I upload DICOM?</summary>
+            <p class="muted">Yes with server integration. This front-end demo accepts images; connect your backend to parse DICOM and return overlays.</p>
+          </details>
+          <details>
+            <summary>How do you protect patient data?</summary>
+            <p class="muted">We employ encrypted transport, short-lived URLs, and configurable retention. Remove PHI in demo mode.</p>
+          </details>
+        </div>
+        <div>
+          <details>
+            <summary>Which model do you use?</summary>
+            <p class="muted">The UI is model-agnostic (e.g., ResNet/ViT). Your backend exposes an endpoint that returns scores and a heatmap image.</p>
+          </details>
+          <details>
+            <summary>Can I export results?</summary>
+            <p class="muted">Yes. Add a server endpoint to generate PDF summaries with your logo and the reviewer’s notes.</p>
+          </details>
+          <details>
+            <summary>Is there a dark mode?</summary>
+            <p class="muted">You’re looking at it. The palette is optimized for low-glare reading.</p>
+          </details>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact / Footer -->
+  <section id="contact">
+    <div class="container">
+      <div class="card">
+        <div class="grid2">
+          <div>
+            <h2 class="h2">Get in touch</h2>
+            <p class="muted">Want to integrate this with your Django backend and AI model? Reach out and we’ll help you wire it up.</p>
+            <p class="muted"><i class="bi bi-envelope"></i> hello@cancermamo.example • <i class="bi bi-telephone"></i> +254 700 000 000</p>
+          </div>
+          <form class="glass" style="padding:16px;border-radius:14px">
+            <div class="grid2">
+              <label>
+                <span class="tiny">Name</span>
+                <input required placeholder="Your name" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(122,162,255,.25);background:#0f1736;color:var(--text)"/>
+              </label>
+              <label>
+                <span class="tiny">Email</span>
+                <input type="email" required placeholder="you@example.com" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(122,162,255,.25);background:#0f1736;color:var(--text)"/>
+              </label>
+            </div>
+            <label style="display:block;margin-top:10px">
+              <span class="tiny">Message</span>
+              <textarea rows="4" placeholder="How can we help?" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(122,162,255,.25);background:#0f1736;color:var(--text)"></textarea>
+            </label>
+            <button class="btn btn-primary" type="submit" style="margin-top:12px"><i class="bi bi-send"></i> Send</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container foot">
+      <div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <div class="logo"><i class="bi bi-activity"></i></div>
+          <strong style="font-size:1.05rem">CancerMamo</strong>
+        </div>
+        <p class="tiny" style="margin-top:6px">AI-assisted mammography companion for education and clinical support. Not a medical device.</p>
+      </div>
+      <div>
+        <strong>Product</strong>
+        <div class="bar"></div>
+        <div class="tiny"><a href="#features">Features</a></div>
+        <div class="tiny"><a href="#how">How it works</a></div>
+        <div class="tiny"><a href="#upload">Demo</a></div>
+      </div>
+      <div>
+        <strong>Company</strong>
+        <div class="bar"></div>
+        <div class="tiny"><a href="#contact">Contact</a></div>
+        <div class="tiny"><a href="#">Privacy</a></div>
+        <div class="tiny"><a href="#">Terms</a></div>
+      </div>
+      <div>
+        <strong>Social</strong>
+        <div class="bar"></div>
+        <div class="tiny"><i class="bi bi-twitter-x"></i> @CancerMamo</div>
+        <div class="tiny"><i class="bi bi-linkedin"></i> LinkedIn</div>
+        <div class="tiny"><i class="bi bi-github"></i> GitHub</div>
+      </div>
+    </div>
+    <div class="container tiny" style="padding-bottom:26px;color:#8e98b8">© <span id="year"></span> CancerMamo. For educational and clinical support only.</div>
+  </footer>
+
+  <script>
+    // Mobile menu (minimal)
+    const btn = document.getElementById('menuBtn');
+    btn?.addEventListener('click', () => {
+      const links = document.querySelector('.nav-links');
+      if (!links) return;
+      links.style.display = links.style.display === 'flex' ? 'none' : 'flex';
+      links.style.flexDirection = 'column';
+      links.style.background = 'rgba(11,16,32,.95)';
+      links.style.position = 'absolute';
+      links.style.right = '20px';
+      links.style.top = '56px';
+      links.style.padding = '12px 16px';
+      links.style.border = '1px solid rgba(122,162,255,.2)';
+      links.style.borderRadius = '12px';
+    });
+
+    // Demo uploader logic (front-end only)
+    const dropArea = document.getElementById('dropArea');
+    const fileInput = document.getElementById('fileInput');
+    const demoBtn = document.getElementById('demoBtn');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const fileName = document.getElementById('fileName');
+    const fileMeta = document.getElementById('fileMeta');
+    const statusEl = document.getElementById('status');
+    const resultRow = document.getElementById('resultRow');
+    const resultEl = document.getElementById('result');
+
+    function setFile(f){
+      if(!f) return;
+      fileName.textContent = f.name || 'sample_mammo.jpg';
+      fileMeta.textContent = `${(f.size ? (f.size/1024/1024).toFixed(2) : '1.2')} MB • ${f.type || 'image/jpeg'}`;
+      statusEl.textContent = 'Ready to analyze';
+      analyzeBtn.disabled = false;
+    }
+
+    ;['dragenter','dragover'].forEach(ev=>{
+      dropArea.addEventListener(ev, (e)=>{e.preventDefault(); dropArea.classList.add('drag');});
+    });
+    ;['dragleave','drop'].forEach(ev=>{
+      dropArea.addEventListener(ev, (e)=>{e.preventDefault(); dropArea.classList.remove('drag');});
+    });
+    dropArea.addEventListener('drop', (e)=>{
+      const f = e.dataTransfer.files?.[0];
+      if(f) setFile(f);
+    });
+    dropArea.addEventListener('click', ()=> fileInput.click());
+    fileInput.addEventListener('change', ()=> setFile(fileInput.files?.[0]));
+    demoBtn.addEventListener('click', ()=> setFile({name:'sample_mammo.jpg',size:1.2*1024*1024,type:'image/jpeg'}));
+    analyzeBtn.addEventListener('click', ()=>{
+      analyzeBtn.disabled = true;
+      statusEl.textContent = 'Analyzing…';
+      setTimeout(()=>{
+        // Fake result for demo. Replace with your backend response.
+        const score = (Math.random()*0.5 + 0.25).toFixed(2);
+        resultEl.textContent = `Benign likelihood: ${score}. Please review heatmap and clinical context.`;
+        resultRow.style.display='flex';
+        statusEl.textContent = 'Analysis complete';
+      }, 1200);
+    });
+
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

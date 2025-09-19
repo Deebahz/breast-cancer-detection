@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Report - Medical Prediction Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .sidebar {
+            min-height: 100vh;
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .sidebar a {
+            display: block;
+            margin: 15px 0;
+            text-decoration: none;
+            color: #333;
+        }
+        .sidebar a:hover {
+            font-weight: bold;
+            color: #0d6efd;
+        }
+        .card-custom {
+            border-radius: 10px;
+            padding: 20px;
+            background: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            cursor: pointer;
+        }
+        .upload-area:hover {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-2 sidebar">
+            <h5 class="mb-4">Medical Prediction</h5>
+            <a href="{% url 'dashboard' %}">Dashboard</a>
+            <a href="{% url 'upload_report' %}" style="font-weight: bold; color: #0d6efd;">Upload Report</a>
+            <a href="{% url 'view_predictions' %}">View Predictions</a>
+            <a href="{% url 'interpretation' %}">Interpretation</a>
+            <a href="{% url 'account_settings' %}">Account Settings</a>
+            <a href="{% url 'logout' %}">Logout</a>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-10 p-4">
+            <h4 class="text-center mb-4">UPLOAD REPORT</h4>
+
+            <!-- Upload Form -->
+            <div class="card-custom">
+                <h5>Upload Medical Report</h5>
+                <p>Please upload your medical report for analysis. Supported formats: PDF, JPG, PNG.</p>
+                
+                <div class="upload-area" id="dropZone">
+                    <i class="fas fa-cloud-upload-alt fa-3x mb-3" style="color: #0d6efd;"></i>
+                    <p>Drag & Drop your file here or <span class="text-primary">browse files</span></p>
+                    <p class="text-muted small">Maximum file size: 10MB</p>
+                </div>
+                
+                <form id="uploadForm" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="reportFile" class="form-label">Select Report File</label>
+                        <input class="form-control" type="file" id="reportFile" name="report_file" accept=".pdf,.jpg,.jpeg,.png">
+                    </div>
+                    <div class="mb-3">
+                        <label for="reportType" class="form-label">Report Type</label>
+                        <select class="form-select" id="reportType" name="report_type">
+                            <option value="mammogram">Mammogram</option>
+                            <option value="ultrasound">Ultrasound</option>
+                            <option value="biopsy">Biopsy Report</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Additional Notes (Optional)</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Any additional information about this report..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="uploadBtn">
+                        <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                        Upload Report
+                    </button>
+                </form>
+            </div>
+
+            <!-- Recent Uploads -->
+            <div class="card-custom mt-4">
+                <h5>Recent Uploads</h5>
+                <ul class="list-group">
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Mammogram Report - 2023-05-15</span>
+                        <span class="badge bg-success">Processed</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Ultrasound Report - 2023-04-22</span>
+                        <span class="badge bg-warning">Pending</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Biopsy Report - 2023-03-10</span>
+                        <span class="badge bg-success">Processed</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Drag and drop functionality
+    const dropZone = document.getElementById('dropZone');
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.style.backgroundColor = '#e3f2fd';
+            dropZone.style.borderColor = '#2196f3';
+        });
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.style.backgroundColor = '';
+            dropZone.style.borderColor = '#ccc';
+        });
+    });
+    
+    dropZone.addEventListener('drop', (e) => {
+        const files = e.dataTransfer.files;
+        if (files.length) {
+            document.getElementById('reportFile').files = files;
+        }
+    });
+</script>
+</body>
+</html>
