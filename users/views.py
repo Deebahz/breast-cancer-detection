@@ -16,6 +16,7 @@ def upload_report(request):
         report_file = request.FILES.get('report_file')
         report_type = request.POST.get('report_type')
         notes = request.POST.get('notes', '')
+        report_name = report_file.name if report_file else 'No file selected'
 
         if not report_file:
             messages.error(request, 'Please select a file to upload.')
@@ -297,8 +298,8 @@ def verify_otp(request):
                 del request.session['registration_otp_created_at']
                 # Send registration confirmation email
                 send_mail(
-                    'Registration Successful',
-                    'You have successfully registered at CancerMamo.',
+                    'Good News: Registration Successful',
+                    'Dear, You have successfully registered at CancerMamo.',
                     'no-reply@cancermamo.com',
                     [registration_email],
                     fail_silently=True,

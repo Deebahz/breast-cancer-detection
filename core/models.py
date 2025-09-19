@@ -6,9 +6,7 @@ import os
 class MedicalReport(models.Model):
     REPORT_TYPES = [
         ('mammogram', 'Mammogram'),
-        ('ultrasound', 'Ultrasound'),
-        ('biopsy', 'Biopsy Report'),
-        ('other', 'Other'),
+
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)

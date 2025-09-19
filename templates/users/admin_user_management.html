@@ -72,7 +72,7 @@
         <div class="col-md-4">
             <div class="stats-card text-center">
                 <h5>Total Users</h5>
-                <h3 class="login-count">{{ user_login_counts|length }}</h3>
+                <h3 class="login-count">{{ user_count }}</h3>
                 <p class="text-muted">Users who logged in during selected period</p>
             </div>
         </div>
@@ -80,9 +80,7 @@
             <div class="stats-card text-center">
                 <h5>Total Logins</h5>
                 <h3 class="login-count">
-                    {% with total=user_login_counts|mapattribute:"login_count"|sum %}
-                        {{ total }}
-                    {% endwith %}
+                    {{ total_logins }}
                 </h3>
                 <p class="text-muted">Total login events</p>
             </div>
@@ -91,13 +89,7 @@
             <div class="stats-card text-center">
                 <h5>Average Logins</h5>
                 <h3 class="login-count">
-                    {% with total=user_login_counts|mapattribute:"login_count"|sum count=user_login_counts|length %}
-                        {% if count > 0 %}
-                            {{ total|floatformat:1 }}
-                        {% else %}
-                            0
-                        {% endif %}
-                    {% endwith %}
+                    {{ average_logins }}
                 </h3>
                 <p class="text-muted">Per user average</p>
             </div>
@@ -128,7 +120,7 @@
                             <form method="post" style="display: inline;">
                                 {% csrf_token %}
                                 <input type="hidden" name="delete_user_id" value="{{ user_data.user__id }}">
-                                <button type="submit" class="btn btn-danger btn-sm" 
+                                <button type="submit" class="btn btn-danger btn-sm"
                                         onclick="return confirm('Are you sure you want to delete user {{ user_data.user__username }}? This action cannot be undone.')">
                                     Delete
                                 </button>
