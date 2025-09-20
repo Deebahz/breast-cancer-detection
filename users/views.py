@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.core.mail import send_mail
-from .models import EmailOTP, UserLoginRecord
+from .models import EmailOTP, UserLoginRecord, Profile
 from core.models import MedicalReport, Prediction
 from core.views import create_prediction_for_report
 import datetime
@@ -15,9 +15,11 @@ def upload_report(request):
     if request.method == 'POST':
         report_file = request.FILES.get('report_file')
         report_type = request.POST.get('report_type')
-        notes = request.POST.get('notes', '')
-        report_name = report_file.name if report_file else 'No file selected'
+        notes = request.POST.get('notes', '').strip()
+        report_name = request.POST.get('report_name', '').strip()
+        patient_id = request.POST.get('patient_id', '').strip()
 
+        # Validate file presence
         if not report_file:
             messages.error(request, 'Please select a file to upload.')
             return redirect('upload_report')
@@ -41,7 +43,9 @@ def upload_report(request):
                 user=request.user,
                 file=report_file,
                 report_type=report_type,
-                notes=notes
+                notes=notes,
+                report_name=report_name if report_name else None,
+                patient_id=patient_id if patient_id else None
             )
 
             # Create prediction for the report
@@ -60,7 +64,14 @@ def upload_report(request):
 
             prediction = create_prediction_for_report(medical_report)
 
-            messages.success(request, 'Report uploaded successfully! Prediction has been generated.')
+            # Check if fallback model was used
+            from core.views import model
+            is_fallback = hasattr(model, '_is_fallback') and model._is_fallback
+
+            if is_fallback:
+                messages.warning(request, 'Report uploaded successfully! Using test model for prediction (random results). For accurate predictions, please ensure a trained model is available.')
+            else:
+                messages.success(request, 'Report uploaded successfully! Prediction has been generated.')
             return redirect('view_predictions')
 
         except Exception as e:
@@ -105,10 +116,11 @@ def view_predictions(request):
         if report_type_filter != 'all':
             predictions = predictions.filter(report__report_type=report_type_filter)
 
-        # Convert created_at to East Africa Time (EAT)
-        eat = pytz.timezone('Africa/Nairobi')
+        # Convert created_at to local time
+        import os
+        local_tz = pytz.timezone(os.environ.get('TZ', 'UTC'))
         for prediction in predictions:
-            prediction.created_at_eat = localtime(prediction.created_at, eat)
+            prediction.created_at_local = localtime(prediction.created_at, local_tz)
 
         context = {
             'predictions': predictions,
@@ -139,8 +151,139 @@ def interpretation_detail(request, prediction_id):
     }
     return render(request, 'users/interpretation.html', context)
 
+@login_required
 def account_settings(request):
-    return render(request, 'users/account_settings.html')
+    try:
+        # Get or create user profile
+        profile, created = Profile.objects.get_or_create(
+            user=request.user,
+            defaults={
+                'first_name': '',
+                'last_name': '',
+                'username': request.user.username
+            }
+        )
+
+        if request.method == 'POST':
+            action = request.POST.get('action')
+
+            if action == 'update_profile':
+                # Handle profile updates
+                first_name = request.POST.get('first_name', '').strip()
+                last_name = request.POST.get('last_name', '').strip()
+                email = request.POST.get('email', '').strip()
+
+                # Validate required fields
+                if not first_name or not last_name:
+                    messages.error(request, 'First name and last name are required.')
+                    return redirect('account_settings')
+
+                if not email:
+                    messages.error(request, 'Email address is required.')
+                    return redirect('account_settings')
+
+                # Validate email format
+                import re
+                email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+                if not re.match(email_pattern, email):
+                    messages.error(request, 'Please enter a valid email address.')
+                    return redirect('account_settings')
+
+                # Validate email uniqueness (if changed)
+                if email != request.user.email:
+                    if User.objects.filter(email=email).exclude(id=request.user.id).exists():
+                        messages.error(request, 'Email already exists. Please use a different email.')
+                        return redirect('account_settings')
+
+                try:
+                    # Update user email
+                    request.user.email = email
+                    request.user.save()
+
+                    # Update profile
+                    profile.first_name = first_name
+                    profile.last_name = last_name
+                    profile.save()
+
+                    messages.success(request, 'Profile updated successfully!')
+                    return redirect('account_settings')
+                except Exception as e:
+                    messages.error(request, f'Error updating profile: {str(e)}')
+                    return redirect('account_settings')
+
+            elif action == 'change_password':
+                # Handle password changes
+                current_password = request.POST.get('current_password')
+                new_password = request.POST.get('new_password')
+                confirm_password = request.POST.get('confirm_password')
+
+                # Validate current password
+                if not current_password:
+                    messages.error(request, 'Current password is required.')
+                    return redirect('account_settings')
+
+                # Verify current password
+                if not request.user.check_password(current_password):
+                    messages.error(request, 'Current password is incorrect.')
+                    return redirect('account_settings')
+
+                # Validate new password
+                if not new_password:
+                    messages.error(request, 'New password is required.')
+                    return redirect('account_settings')
+
+                if len(new_password) < 8:
+                    messages.error(request, 'New password must be at least 8 characters long.')
+                    return redirect('account_settings')
+
+                # Check password strength
+                import re
+                if not re.search(r'[A-Z]', new_password):
+                    messages.error(request, 'New password must contain at least one uppercase letter.')
+                    return redirect('account_settings')
+
+                if not re.search(r'[a-z]', new_password):
+                    messages.error(request, 'New password must contain at least one lowercase letter.')
+                    return redirect('account_settings')
+
+                if not re.search(r'\d', new_password):
+                    messages.error(request, 'New password must contain at least one number.')
+                    return redirect('account_settings')
+
+                if new_password != confirm_password:
+                    messages.error(request, 'New passwords do not match.')
+                    return redirect('account_settings')
+
+                # Check if new password is different from current
+                if current_password == new_password:
+                    messages.error(request, 'New password must be different from current password.')
+                    return redirect('account_settings')
+
+                try:
+                    # Update password
+                    request.user.set_password(new_password)
+                    request.user.save()
+
+                    # Update session to prevent logout
+                    from django.contrib.auth import update_session_auth_hash
+                    update_session_auth_hash(request, request.user)
+
+                    messages.success(request, 'Password changed successfully!')
+                    return redirect('account_settings')
+                except Exception as e:
+                    messages.error(request, f'Error changing password: {str(e)}')
+                    return redirect('account_settings')
+
+        # GET request - display current profile data
+        context = {
+            'profile': profile,
+            'user': request.user,
+        }
+        return render(request, 'users/account_settings.html', context)
+
+    except Exception as e:
+        messages.error(request, f'An error occurred: {str(e)}')
+        return redirect('account_settings')
 
 def landing_page(request):
     return render(request, 'users/landingpage.html')
@@ -194,27 +337,31 @@ def dashboard(request):
 
 def user_logout(request):
     logout(request)
-    return redirect('')
+    return redirect('landing_page')
 
 def user_register(request):
     if request.method == "POST":
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
         username = request.POST.get('username')
         email = request.POST.get('email')
         password = request.POST.get('password')
-        
+
         # Check if username already exists
         if User.objects.filter(username=username).exists():
             return render(request, 'users/register.html', {'error': 'Username already exists'})
-        
+
         # Check if email already exists
         if User.objects.filter(email=email).exists():
             return render(request, 'users/register.html', {'error': 'Email already exists'})
-        
+
         # Store registration data in session instead of creating user immediately
+        request.session['registration_first_name'] = first_name
+        request.session['registration_last_name'] = last_name
         request.session['registration_username'] = username
         request.session['registration_email'] = email
         request.session['registration_password'] = password
-        
+
         # Generate OTP and send email without user object
         otp_code = EmailOTP.generate_otp()
         request.session['registration_otp'] = otp_code
@@ -234,6 +381,8 @@ def verify_otp(request):
     registration_email = request.session.get('registration_email')
     registration_password = request.session.get('registration_password')
     registration_username = request.session.get('registration_username')
+    registration_first_name = request.session.get('registration_first_name')
+    registration_last_name = request.session.get('registration_last_name')
     registration_otp = request.session.get('registration_otp')
     user = None
     if user_id:
@@ -249,13 +398,13 @@ def verify_otp(request):
                     return redirect('login')
                 otp_record.is_verified = True
                 otp_record.save()
-                
+
                 # Clean up old OTPs for this user
                 EmailOTP.objects.filter(
-                    user=user, 
+                    user=user,
                     is_verified=False
                 ).exclude(id=otp_record.id).delete()
-                
+
                 login(request, user)
                 # Send login confirmation email
                 send_mail(
@@ -279,19 +428,30 @@ def verify_otp(request):
                     return redirect('register')
             if otp_input == registration_otp:
                 # Create user after successful OTP verification
-                username = registration_email.split('@')[0]
-                user = User.objects.create_user(username=username, password=registration_password, email=registration_email)
+                user = User.objects.create_user(username=registration_username, password=registration_password, email=registration_email)
+
+                # Create and populate Profile
+                Profile.objects.create(
+                    user=user,
+                    first_name=registration_first_name,
+                    last_name=registration_last_name,
+                    username=registration_username
+                )
+
                 # Mark OTP as verified in DB
                 EmailOTP.objects.create(user=user, otp_code=otp_input, is_verified=True)
-                
+
                 # Clean up any old OTPs for this user
                 EmailOTP.objects.filter(
-                    user=user, 
+                    user=user,
                     is_verified=False
                 ).delete()
-                
+
                 login(request, user)
                 # Clear registration session data
+                del request.session['registration_first_name']
+                del request.session['registration_last_name']
+                del request.session['registration_username']
                 del request.session['registration_email']
                 del request.session['registration_password']
                 del request.session['registration_otp']
@@ -322,6 +482,8 @@ from django.urls import reverse
 def about(request):
     return render(request, 'users/about.html')
 
+
+#Admin user management view
 @staff_member_required
 def admin_user_management(request):
     # Get date range from GET parameters
@@ -357,3 +519,9 @@ def admin_user_management(request):
         'end_date': end_date_str,
     }
     return render(request, 'users/admin_user_management.html', context)
+from django import template
+register = template.Library()
+@register.filter
+def sum_field(queryset, field_name):
+    """Sum a specific field from a queryset of dictionaries"""
+    return sum(int(item[field_name]) for item in queryset if field_name in item)

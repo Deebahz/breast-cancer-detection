@@ -73,13 +73,16 @@
                     <p class="text-muted small">Maximum file size: 10MB</p>
                 </div>
                 
-                 <div class="mb-3">
-                        <label for="report_name" class="form-label">Report Name</label>
-                        <textarea class="form-control" id="notes" name="report_name" rows="1" placeholder="Report Name"></textarea>
-                    </div>
-
                 <form id="uploadForm" method="post" enctype="multipart/form-data">
                     {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="report_name" class="form-label">Report Name</label>
+                        <input type="text" class="form-control" id="report_name" name="report_name" placeholder="Enter report name/identifier">
+                    </div>
+                    <div class="mb-3">
+                        <label for="patient_id" class="form-label">Patient ID</label>
+                        <input type="text" class="form-control" id="patient_id" name="patient_id" placeholder="Enter patient unique identifier">
+                    </div>
                     <div class="mb-3">
                         <label for="reportFile" class="form-label">Select Report File</label>
                         <input class="form-control" type="file" id="reportFile" name="report_file" accept=".pdf,.jpg,.jpeg,.png">

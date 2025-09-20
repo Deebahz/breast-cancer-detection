@@ -134,7 +134,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Breast Cancer Detection Model Settings
 
-BREAST_CANCER_MODEL_PATH = os.environ.get('BREAST_CANCER_MODEL_PATH',  'C:/Users/DibaAbdimujib/Downloads/breast_cancer_cnn.pth')
+BREAST_CANCER_MODEL_PATH = os.environ.get('BREAST_CANCER_MODEL_PATH', os.path.join(BASE_DIR, 'models', 'breast_cancer_model.pth'))
 # Example: 'C:/path/to/your/model/breast_cancer_cnn.pth'
 
 # Email backend configuration for Gmail SMTP with SSL

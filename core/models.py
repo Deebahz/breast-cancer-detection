@@ -6,23 +6,29 @@ import os
 class MedicalReport(models.Model):
     REPORT_TYPES = [
         ('mammogram', 'Mammogram'),
-
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     file = models.FileField(upload_to='medical_reports/')
+    grad_cam_image = models.ImageField(upload_to='grad_cam_images/', blank=True, null=True)
+    report_name = models.CharField(max_length=255, blank=True, null=True, help_text="Name/identifier for this report")
+    patient_id = models.CharField(max_length=100, blank=True, null=True, help_text="Patient unique identifier")
     report_type = models.CharField(max_length=20, choices=REPORT_TYPES, default='mammogram')
     notes = models.TextField(blank=True, null=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.user.username} - {self.report_type} - {self.uploaded_at.date()}"
+        report_name = self.report_name or f"Report {self.id}"
+        return f"{self.user.username} - {report_name} - {self.uploaded_at.date()}"
 
     def delete(self, *args, **kwargs):
-        # Delete the file from storage when the model is deleted
+        # Delete the files from storage when the model is deleted
         if self.file:
             if default_storage.exists(self.file.name):
                 default_storage.delete(self.file.name)
+        if self.grad_cam_image:
+            if default_storage.exists(self.grad_cam_image.name):
+                default_storage.delete(self.grad_cam_image.name)
         super().delete(*args, **kwargs)
 
 

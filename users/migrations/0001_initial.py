@@ -3,7 +3,8 @@
 import django.db.models.deletion
 from django.conf import settings
 from django.db import migrations, models
-
+from django.contrib.auth.models import User
+from django.db import models
 
 class Migration(migrations.Migration):
 
@@ -24,4 +25,6 @@ class Migration(migrations.Migration):
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
         ),
+    
+
     ]
