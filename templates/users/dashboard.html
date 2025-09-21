@@ -53,22 +53,74 @@
             <!-- Recent Predictions -->
             <div class="card-custom mb-4">
                 <h6>Recent Predictions</h6>
-                <ul class="list-group">
-                    {% for prediction in recent_predictions %}
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>Prediction {{ prediction.id }} - {{ prediction.result }}</span>
-                            <span class="text-muted">{{ prediction.date }}</span>
-                        </li>
-                    {% empty %}
-                        <li class="list-group-item text-muted">No predictions yet.</li>
-                    {% endfor %}
-                </ul>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label for="dateRange" class="form-label">Date Range</label>
+                            <select class="form-select" id="dateRange" name="date_range">
+                                <option value="all" {% if date_range == 'all' %}selected{% endif %}>All Time</option>
+                                <option value="last_30" {% if date_range == 'last_30' %}selected{% endif %}>Last 30 Days</option>
+                                <option value="last_90" {% if date_range == 'last_90' %}selected{% endif %}>Last 90 Days</option>
+                                <option value="last_year" {% if date_range == 'last_year' %}selected{% endif %}>Last Year</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="riskLevel" class="form-label">Risk Level</label>
+                            <select class="form-select" id="riskLevel" name="risk_level">
+                                <option value="all" {% if risk_level == 'all' %}selected{% endif %}>All</option>
+                                <option value="high" {% if risk_level == 'high' %}selected{% endif %}>High Risk</option>
+                                <option value="medium" {% if risk_level == 'medium' %}selected{% endif %}>Medium Risk</option>
+                                <option value="low" {% if risk_level == 'low' %}selected{% endif %}>Low Risk</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="reportType" class="form-label">Report Type</label>
+                            <select class="form-select" id="reportType" name="report_type">
+                                <option value="all" {% if report_type_filter == 'all' %}selected{% endif %}>All</option>
+                                <option value="Mammogram" {% if report_type_filter == 'Mammogram' %}selected{% endif %}>Mammogram</option>
+                                <option value="Ultrasound" {% if report_type_filter == 'Ultrasound' %}selected{% endif %}>Ultrasound</option>
+                                <option value="Biopsy" {% if report_type_filter == 'Biopsy' %}selected{% endif %}>Biopsy</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <hr>
             </div>
 
             <!-- Total Scans -->
             <div class="card-custom" style="width: 200px;">
                 <h6>Total Scans</h6>
                 <p class="fs-4">{{ total_scans }}</p>
+                <div class="card-custom mt-4">
+                <h5>Recent Uploads</h5>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th scope="col">User</th>
+                            <th scope="col">Upload Date</th>
+                            <th scope="col">Report Type</th>
+                            
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in recent_reports %}
+                        <tr>
+                            <td>{{ report.user.username }}</td>
+                            <td>{{ report.uploaded_at|date:"M d, Y H:i" }}</td>
+                            <td>{{ report.get_report_type_display }}</td>
+                            <td>{{ report.get_status_display }}</td>
+                           
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center">No reports uploaded yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+</div>
             </div>
         </div>
     </div>

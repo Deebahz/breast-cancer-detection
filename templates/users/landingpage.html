@@ -129,8 +129,8 @@
         <a href="#FAQ">FAQ</a>
       </nav>
       <div style="display:flex;gap:10px;align-items:center">
-        <a class="btn btn-outline" href="{% url 'register' %}"><i class="bi bi-envelope"></i> Contact</a>
-        <a class="btn btn-primary" href="{% url 'register' %}"><i class="bi bi-cloud-upload"></i> Login</a>
+        <a class="btn btn-outline" href="{% url 'register' %}"><i class="bi bi-envelope"></i> Register</a>
+        <a class="btn btn-primary" href="{% url 'login' %}"><i class="bi bi-cloud-upload"></i> Login</a>
         <button class="btn btn-outline mobile-toggle" id="menuBtn" aria-label="Open menu"><i class="bi bi-list"></i></button>
       </div>
     </div>
@@ -312,15 +312,15 @@
       <h2 class="h2 center">What users say</h2>
       <div class="testis" style="margin-top:16px">
         <div class="quote">
-          <blockquote>“The heatmaps are fantastic for teaching our interns how to think about subtle findings.”</blockquote>
+          <blockquote>"The heatmaps are fantastic for teaching our interns how to think about subtle findings."</blockquote>
           <div class="tiny muted" style="margin-top:8px">— Radiology Educator</div>
         </div>
         <div class="quote">
-          <blockquote>“Upload, triage, review — the workflow is exactly what we needed during busy clinics.”</blockquote>
+          <blockquote>"Upload, triage, review — the workflow is exactly what we needed during busy clinics."</blockquote>
           <div class="tiny muted" style="margin-top:8px">— Clinic Lead</div>
         </div>
         <div class="quote">
-          <blockquote>“Simple for patients, powerful for clinicians. The best of both worlds.”</blockquote>
+          <blockquote>"Simple for patients, powerful for clinicians. The best of both worlds."</blockquote>
           <div class="tiny muted" style="margin-top:8px">— General Practitioner</div>
         </div>
       </div>
@@ -353,11 +353,11 @@
           </details>
           <details>
             <summary>Can I export results?</summary>
-            <p class="muted">Yes. Add a server endpoint to generate PDF summaries with your logo and the reviewer’s notes.</p>
+            <p class="muted">Yes. Add a server endpoint to generate PDF summaries with your logo and the reviewer's notes.</p>
           </details>
           <details>
             <summary>Is there a dark mode?</summary>
-            <p class="muted">You’re looking at it. The palette is optimized for low-glare reading.</p>
+            <p class="muted">You're looking at it. The palette is optimized for low-glare reading.</p>
           </details>
         </div>
       </div>
@@ -371,23 +371,24 @@
         <div class="grid2">
           <div>
             <h2 class="h2">Get in touch</h2>
-            <p class="muted">Want to integrate this with your Django backend and AI model? Reach out and we’ll help you wire it up.</p>
+            <p class="muted"> Reach out!</p>
             <p class="muted"><i class="bi bi-envelope"></i> hello@cancermamo.example • <i class="bi bi-telephone"></i> +254 700 000 000</p>
           </div>
-          <form class="glass" style="padding:16px;border-radius:14px">
+          <form class="glass" style="padding:16px;border-radius:14px" method="POST" action="{% url 'contact' %}">
+            {% csrf_token %}
             <div class="grid2">
               <label>
                 <span class="tiny">Name</span>
-                <input required placeholder="Your name" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(122,162,255,.25);background:#0f1736;color:var(--text)"/>
+                <input name="name" required placeholder="Your name" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(122,162,255,.25);background:#0f1736;color:var(--text)"/>
               </label>
               <label>
                 <span class="tiny">Email</span>
-                <input type="email" required placeholder="you@example.com" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(122,162,255,.25);background:#0f1736;color:var(--text)"/>
+                <input name="email" type="email" required placeholder="you@example.com" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(122,162,255,.25);background:#0f1736;color:var(--text)"/>
               </label>
             </div>
             <label style="display:block;margin-top:10px">
               <span class="tiny">Message</span>
-              <textarea rows="4" placeholder="How can we help?" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(122,162,255,.25);background:#0f1736;color:var(--text)"></textarea>
+              <textarea name="message" rows="4" placeholder="How can we help?" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(122,162,255,.25);background:#0f1736;color:var(--text)"></textarea>
             </label>
             <button class="btn btn-primary" type="submit" style="margin-top:12px"><i class="bi bi-send"></i> Send</button>
           </form>
@@ -415,7 +416,7 @@
       <div>
         <strong>Company</strong>
         <div class="bar"></div>
-        <div class="tiny"><a href="#contact">Contact</a></div>
+        <div class="tiny"><a href="{% url 'contact' %}">Contact</a></div>
         <div class="tiny"><a href="#">Privacy</a></div>
         <div class="tiny"><a href="#">Terms</a></div>
       </div>

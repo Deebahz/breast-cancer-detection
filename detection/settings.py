@@ -24,7 +24,7 @@ import os
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-cs&p@+fl(39a3q5x)3zm-ko)sqcsm0_c*kkt#8@q)3$6n#z+0m')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
+DEBUG = True
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',') if os.environ.get('ALLOWED_HOSTS') else ['*']
 
@@ -139,6 +139,9 @@ BREAST_CANCER_MODEL_PATH = os.environ.get('BREAST_CANCER_MODEL_PATH', os.path.jo
 
 # Email backend configuration for Gmail SMTP with SSL
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+# Login URL for login_required and staff_member_required decorators
+LOGIN_URL = '/login/'
 
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 465

@@ -9,6 +9,7 @@ from core.models import MedicalReport, Prediction
 from core.views import create_prediction_for_report
 import datetime
 from django.utils import timezone
+from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView, PasswordResetDoneView, PasswordResetCompleteView
 
 @login_required
 def upload_report(request):
@@ -311,6 +312,9 @@ def user_login(request):
             if user is not None:
                 user = authenticate(request, username=user.username, password=password)
             if user is not None:
+                # Check if user is staff or superuser
+                if user.is_staff or user.is_superuser:
+                    return redirect('/admin/')
                 # Generate OTP and send email
                 otp_code = EmailOTP.generate_otp()
                 EmailOTP.objects.create(user=user, otp_code=otp_code)
@@ -365,7 +369,7 @@ def user_register(request):
         # Generate OTP and send email without user object
         otp_code = EmailOTP.generate_otp()
         request.session['registration_otp'] = otp_code
-        request.session['registration_otp_created_at'] = timezone.now()
+        request.session['registration_otp_created_at'] = timezone.now().isoformat()
         send_mail(
             'Your Registration OTP',
             f'Your OTP code is {otp_code}',
@@ -422,7 +426,9 @@ def verify_otp(request):
             # Check expiration for registration OTP (10 minutes)
             otp_created_time = request.session.get('registration_otp_created_at')
             if otp_created_time:
-                otp_age = timezone.now() - otp_created_time
+                from datetime import datetime
+                otp_created_time_dt = datetime.fromisoformat(otp_created_time)
+                otp_age = timezone.now() - otp_created_time_dt
                 if otp_age.total_seconds() > 600:
                     messages.error(request, 'OTP expired. Please request a new one.')
                     return redirect('register')
@@ -449,13 +455,20 @@ def verify_otp(request):
 
                 login(request, user)
                 # Clear registration session data
-                del request.session['registration_first_name']
-                del request.session['registration_last_name']
-                del request.session['registration_username']
-                del request.session['registration_email']
-                del request.session['registration_password']
-                del request.session['registration_otp']
-                del request.session['registration_otp_created_at']
+                if 'registration_first_name' in request.session:
+                    del request.session['registration_first_name']
+                if 'registration_last_name' in request.session:
+                    del request.session['registration_last_name']
+                if 'registration_username' in request.session:
+                    del request.session['registration_username']
+                if 'registration_email' in request.session:
+                    del request.session['registration_email']
+                if 'registration_password' in request.session:
+                    del request.session['registration_password']
+                if 'registration_otp' in request.session:
+                    del request.session['registration_otp']
+                if 'registration_otp_created_at' in request.session:
+                    del request.session['registration_otp_created_at']
                 # Send registration confirmation email
                 send_mail(
                     'Good News: Registration Successful',
@@ -484,13 +497,33 @@ def about(request):
 
 
 #Admin user management view
+from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth.models import User
+from django.utils.dateparse import parse_date
+from django.db.models import Count
+from django.http import HttpResponseRedirect
+from django.urls import reverse
+from django.contrib import messages
+from django.shortcuts import render
+from .models import UserLoginRecord
+
 @staff_member_required
 def admin_user_management(request):
-    # Get date range from GET parameters
     start_date_str = request.GET.get('start_date')
     end_date_str = request.GET.get('end_date')
-    start_date = parse_date(start_date_str) if start_date_str else None
-    end_date = parse_date(end_date_str) if end_date_str else None
+    start_date = None
+    end_date = None
+
+    # Validate and parse dates
+    try:
+        if start_date_str:
+            start_date = parse_date(start_date_str)
+        if end_date_str:
+            end_date = parse_date(end_date_str)
+    except Exception:
+        messages.error(request, 'Invalid date format provided.')
+        start_date = None
+        end_date = None
 
     # Filter UserLoginRecord by date range
     login_records = UserLoginRecord.objects.all()
@@ -499,8 +532,11 @@ def admin_user_management(request):
     if end_date:
         login_records = login_records.filter(login_time__date__lte=end_date)
 
-    # Aggregate login counts per user
+    # Calculate statistics
+    total_logins = login_records.count()
     user_login_counts = login_records.values('user__id', 'user__username', 'user__email').annotate(login_count=Count('id')).order_by('-login_count')
+    user_count = user_login_counts.count()
+    average_logins = total_logins / user_count if user_count > 0 else 0
 
     # Handle user deletion
     if request.method == 'POST':
@@ -508,17 +544,117 @@ def admin_user_management(request):
         if user_id_to_delete:
             try:
                 user_to_delete = User.objects.get(id=user_id_to_delete)
-                user_to_delete.delete()
+                if user_to_delete.is_staff:
+                    messages.error(request, 'Cannot delete staff users.')
+                else:
+                    user_to_delete.delete()
+                    messages.success(request, f'User {user_to_delete.username} has been deleted successfully.')
                 return HttpResponseRedirect(reverse('admin_user_management'))
             except User.DoesNotExist:
-                pass
+                messages.error(request, 'User not found.')
+            except Exception as e:
+                messages.error(request, f'Error deleting user: {str(e)}')
 
     context = {
         'user_login_counts': user_login_counts,
         'start_date': start_date_str,
         'end_date': end_date_str,
+        'user_count': user_count,
+        'total_logins': total_logins,
+        'average_logins': round(average_logins, 2),
     }
     return render(request, 'users/admin_user_management.html', context)
+# Contact form view
+def contact_view(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        message = request.POST.get('message')
+
+        # Validate required fields
+        if not name or not email or not message:
+            messages.error(request, 'All fields are required.')
+            return redirect('')
+
+        # Validate email format
+        import re
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, email):
+            messages.error(request, 'Please enter a valid email address.')
+            return redirect('')
+
+        try:
+            # Send email to admin
+            admin_email = 'abdimujib385@gmail.com'  # Your email
+            subject = f'New Contact Form Message from {name}'
+            email_message = f"""
+New message from CancerMamo contact form:
+
+Name: {name}
+Email: {email}
+
+Message:
+{message}
+
+---
+This message was sent from the CancerMamo website contact form.
+            """
+
+            send_mail(
+                subject,
+                email_message,
+                'no-reply@cancermamo.com',
+                [admin_email],
+                fail_silently=False,
+            )
+
+            # Send confirmation email to user
+            user_subject = 'Thank you for contacting CancerMamo'
+            user_message = f"""
+Hi {name},
+
+Thank you for reaching out to CancerMamo! We have received your message and will get back to you within 24-48 hours.
+
+Your message:
+{message}
+
+Best regards,
+The CancerMamo Team
+            """
+
+            send_mail(
+                user_subject,
+                user_message,
+                'no-reply@cancermamo.com',
+                [email],
+                fail_silently=True,
+            )
+
+            messages.success(request, 'Thank you for your message! We will get back to you soon.')
+            return redirect('home')
+
+        except Exception as e:
+            messages.error(request, f'Error sending message: {str(e)}')
+            return redirect('')
+
+    return redirect('')
+
+# Custom password reset views
+class CustomPasswordResetView(PasswordResetView):
+    template_name = 'users/password_reset.html'
+    email_template_name = 'users/password_reset_email.html'
+    success_url = '/password-reset/done/'
+
+class CustomPasswordResetConfirmView(PasswordResetConfirmView):
+    template_name = 'users/password_reset_confirm.html'
+    success_url = '/password-reset/complete/'
+
+class CustomPasswordResetDoneView(PasswordResetDoneView):
+    template_name = 'users/password_reset_done.html'
+
+class CustomPasswordResetCompleteView(PasswordResetCompleteView):
+    template_name = 'users/password_reset_complete.html'
+
 from django import template
 register = template.Library()
 @register.filter
