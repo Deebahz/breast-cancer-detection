@@ -27,6 +27,16 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-cs&p@+fl(39a3q5x)3zm-
 DEBUG = True
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',') if os.environ.get('ALLOWED_HOSTS') else ['*']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.ngrok-free.dev', '.ngrok-free.app']
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.ngrok-free.app',
+    'https://*.ngrok-free.dev',
+    'https://neomi-nonbeneficent-bo.ngrok-free.dev',
+    'https://neomi-nonbeneficent-bo.ngrok-free.app'
+    
+
+]
 
 
 # Application definition
