@@ -341,7 +341,7 @@ def dashboard(request):
 
 def user_logout(request):
     logout(request)
-    return redirect('landing_page')
+    return redirect('home')
 
 def user_register(request):
     if request.method == "POST":
